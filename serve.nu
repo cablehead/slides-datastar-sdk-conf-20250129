@@ -55,15 +55,12 @@ def nav-keys [down: record] {
     })
 
     (route {method: "GET", path: "/sse"} {|req ctx|
-      let init = {h: false, j: false, k: false, l: false}
       .cat --follow --new -T press
       | generate {|frame, state|
-        let state = $state | default $init
-        let meta = $frame.meta
-        let state = $state | upsert $meta.key ($meta.action == "down")
+        let state = $state | upsert $frame.meta.key ($frame.meta.action == "down")
         let html = nav-keys $state
         {out: ($html | to datastar-patch-elements), next: $state}
-      } null
+      } {h: false, j: false, k: false, l: false}
       | to sse
     })
 
