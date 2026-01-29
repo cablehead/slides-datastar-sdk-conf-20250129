@@ -4,17 +4,10 @@ body {
   background: #282a36;
   color: #f8f8f2;
   font-family: system-ui, -apple-system, sans-serif;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  max-width: 900px;
+  margin: 0 auto;
   min-height: 100vh;
   padding: 2em;
-}
-
-article {
-  max-width: 900px;
-  width: 100%;
 }
 
 h1, h2, h3 {

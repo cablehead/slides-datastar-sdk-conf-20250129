@@ -2,6 +2,17 @@ use http-nu/html *
 use http-nu/router *
 use http-nu/datastar *
 
+def head-common [] {
+  [
+    (META {charset: "utf-8"})
+    (META {name: "viewport" content: "width=device-width, initial-scale=1"})
+    (LINK {rel: "stylesheet" href: "/style.css"})
+    (SCRIPT {type: "importmap"} {__html: $'{"imports":{"datastar":"($DATASTAR_CDN_URL)"}}'})
+    (SCRIPT {type: "module" src: $DATASTAR_CDN_URL})
+    (SCRIPT {type: "module" src: "https://cdn.jsdelivr.net/npm/@mbolli/datastar-attribute-on-keys@1/dist/index.js"} "")
+  ]
+}
+
 def nav-key [key: string, --down] {
   let color = if $down { "#f8f8f2" } else { "#6272a4" }
   SPAN {style: {
@@ -28,15 +39,42 @@ def nav-keys [down: record] {
       let content = open ($slides | first) | .md
 
       (HTML
-        (HEAD
-          (META {charset: "utf-8"})
-          (META {name: "viewport" content: "width=device-width, initial-scale=1"})
-          (LINK {rel: "stylesheet" href: "/style.css"})
-          (SCRIPT {type: "importmap"} {__html: $'{"imports":{"datastar":"($DATASTAR_CDN_URL)"}}'})
-          (SCRIPT {type: "module" src: $DATASTAR_CDN_URL})
-          (SCRIPT {type: "module" src: "https://cdn.jsdelivr.net/npm/@mbolli/datastar-attribute-on-keys@1/dist/index.js"} "")
-        )
+        (HEAD ...(head-common))
         (BODY {data-init: "@get('/sse')"}
+          (HEADER {style: {display: flex justify-content: flex-end padding: "0.5em 1em"}}
+            (A {href: "/hjkl"} "hjkl")
+          )
+          (DIV
+            {
+              "data-on-keys:ctrl-l": "@get('/nav/next')"
+              "data-on-keys:ctrl-h": "@get('/nav/prev')"
+            }
+          )
+          (ARTICLE {id: "content"} $content)
+        )
+      )
+    })
+
+    (route {method: "GET", path: "/sse"} {|req ctx|
+      let slides = ls slides/*.md | get name | sort
+
+      .cat --follow --new -T nav
+      | generate {|frame, state|
+        let idx = match $frame.meta.action {
+          "next" => ([($state + 1) (($slides | length) - 1)] | math min)
+          "prev" => ([($state - 1) 0] | math max)
+          _ => $state
+        }
+        let html = ARTICLE {id: "content"} (open ($slides | get $idx) | .md)
+        {out: ($html | to datastar-patch-elements), next: $idx}
+      } 0
+      | to sse
+    })
+
+    (route {path: "/hjkl"} {|req ctx|
+      (HTML
+        (HEAD ...(head-common))
+        (BODY {data-init: "@get('/hjkl/sse')"}
           (DIV
             {
               "data-on-keys:h": "@get('/press/down/h')"
@@ -47,46 +85,19 @@ def nav-keys [down: record] {
               "data-on-keys:j__up": "@get('/press/up/j')"
               "data-on-keys:k__up": "@get('/press/up/k')"
               "data-on-keys:l__up": "@get('/press/up/l')"
-              "data-on-keys:ctrl-l": "@get('/nav/next')"
-              "data-on-keys:ctrl-h": "@get('/nav/prev')"
             }
           )
-          (ARTICLE {id: "content"} $content)
           (nav-keys {h: false, j: false, k: false, l: false})
         )
       )
     })
 
-    (route {method: "GET", path: "/sse"} {|req ctx|
-      let slides = ls slides/*.md | get name | sort
-
-      .cat --follow --new
+    (route {method: "GET", path: "/hjkl/sse"} {|req ctx|
+      .cat --follow --new -T press
       | generate {|frame, state|
-        let state = match $frame.topic {
-          "press" => ($state | upsert keys ($state.keys | upsert $frame.meta.key ($frame.meta.action == "down")))
-          "nav" => {
-            let idx = match $frame.meta.action {
-              "next" => ([($state.slide + 1) (($slides | length) - 1)] | math min)
-              "prev" => ([($state.slide - 1) 0] | math max)
-              _ => $state.slide
-            }
-            $state | upsert slide $idx
-          }
-          _ => $state
-        }
-
-        let patches = match $frame.topic {
-          "press" => [(nav-keys $state.keys | to datastar-patch-elements)]
-          "nav" => [
-            (ARTICLE {id: "content"} (open ($slides | get $state.slide) | .md)
-            | to datastar-patch-elements)
-          ]
-          _ => []
-        }
-
-        {out: $patches, next: $state}
-      } {keys: {h: false, j: false, k: false, l: false}, slide: 0}
-      | flatten
+        let state = $state | upsert $frame.meta.key ($frame.meta.action == "down")
+        {out: (nav-keys $state | to datastar-patch-elements), next: $state}
+      } {h: false, j: false, k: false, l: false}
       | to sse
     })
 
