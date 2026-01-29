@@ -17,14 +17,21 @@ def nav-key [key: string, --down] {
   let color = if $down { "#f8f8f2" } else { "#6272a4" }
   SPAN {style: {
     font-family: ["SF Mono" "Fira Code" "JetBrains Mono" monospace]
-    font-size: 8em
+    font-size: 12em
     font-weight: bold
     color: $color
   }} $key
 }
 
 def nav-keys [down: record] {
-  NAV {id: "nav-keys" style: {display: flex justify-content: space-around width: "80%" margin-top: 2em}} [
+  NAV {id: "nav-keys" style: {
+    display: flex
+    justify-content: space-around
+    align-items: center
+    flex: 1
+    border: "1px solid white"
+  }
+  } [
     (nav-key H --down=($down.h))
     (nav-key J --down=($down.j))
     (nav-key K --down=($down.k))
@@ -41,7 +48,7 @@ def nav-keys [down: record] {
       (HTML
         (HEAD ...(head-common))
         (BODY {data-init: "@get('/sse')"}
-          (HEADER {style: {display: flex justify-content: flex-end padding: "0.5em 1em"}}
+          (HEADER {style: {display: flex justify-content: flex-end}}
             (A {href: "/hjkl"} "hjkl")
           )
           (DIV
@@ -74,7 +81,10 @@ def nav-keys [down: record] {
     (route {path: "/hjkl"} {|req ctx|
       (HTML
         (HEAD ...(head-common))
-        (BODY {data-init: "@get('/hjkl/sse')"}
+        (BODY {data-init: "@get('/hjkl/sse')" style: {display: flex flex-direction: column}}
+          (HEADER {style: {display: flex justify-content: flex-start}}
+            (NAV (A {href: "/"} "home") " / hjkl")
+          )
           (DIV
             {
               "data-on-keys:h": "@get('/press/down/h')"
