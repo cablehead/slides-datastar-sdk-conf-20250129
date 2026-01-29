@@ -46,26 +46,50 @@ def nav-keys [down: record] {
               "data-on-keys:j__up": "@get('/press/up/j')"
               "data-on-keys:k__up": "@get('/press/up/k')"
               "data-on-keys:l__up": "@get('/press/up/l')"
+              "data-on-keys:ctrl-l": "@get('/nav/next')"
             }
           )
-          (ARTICLE $content)
+          (ARTICLE {id: "content"} $content)
           (nav-keys {h: false, j: false, k: false, l: false})
         )
       )
     })
 
     (route {method: "GET", path: "/sse"} {|req ctx|
-      .cat --follow --new -T press
+      let slides = [slide.md next.md]
+
+      .cat --follow --new
       | generate {|frame, state|
-        let state = $state | upsert $frame.meta.key ($frame.meta.action == "down")
-        let html = nav-keys $state
-        {out: ($html | to datastar-patch-elements), next: $state}
-      } {h: false, j: false, k: false, l: false}
+        let state = match $frame.topic {
+          "press" => ($state | upsert keys ($state.keys | upsert $frame.meta.key ($frame.meta.action == "down")))
+          "nav" => {
+            let idx = [($state.slide + 1) (($slides | length) - 1)] | math min
+            $state | upsert slide $idx
+          }
+          _ => $state
+        }
+
+        let patches = match $frame.topic {
+          "press" => [(nav-keys $state.keys | to datastar-patch-elements)]
+          "nav" => [
+            (ARTICLE {id: "content"} (open ($slides | get $state.slide) | .md)
+            | to datastar-patch-elements)
+          ]
+          _ => []
+        }
+
+        {out: $patches, next: $state}
+      } {keys: {h: false, j: false, k: false, l: false}, slide: 0}
+      | flatten
       | to sse
     })
 
     (route {method: "GET", path-matches: "/press/:action/:key"} {|req ctx|
       null | .append press --meta {key: $ctx.key, action: $ctx.action} --ttl ephemeral | ignore
+    })
+
+    (route {method: "GET", path: "/nav/next"} {|req ctx|
+      null | .append nav --meta {action: next} --ttl ephemeral | ignore
     })
 
     (route true {|req ctx|
