@@ -1,6 +1,6 @@
 # Datastar SDK conf, Jan 29, 2026
 
-Replay of live stream, on youtube: [Jan 29, 2026 - Datastar SDK Conf](https://www.youtube.com/live/lc48MUnS2wM?si=dSV_u5nzXj2xVjBa&t=510)
+Replay of live stream, on youtube: [Jan 29, 2026 - Datastar SDK Conf](https://youtu.be/xN30XVJpwLU?si=RZZHPkcXfrSbq87Y&t=437)
 
 Play with the slides and examples: https://slides-datastar-sdk-conf-20260129.cross.stream
 

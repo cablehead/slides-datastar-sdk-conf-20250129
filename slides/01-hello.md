@@ -5,7 +5,7 @@
 </p>
 
 <p style="font-size: 1.2em; margin-top: 0.5em; color: #6272a4;">
-<a href="https://www.youtube.com/live/lc48MUnS2wM?si=dSV_u5nzXj2xVjBa&t=510" style="color: #6272a4;">Jan 29, 2026 - Datastar SDK Conf</a>
+<a href="https://youtu.be/xN30XVJpwLU?si=RZZHPkcXfrSbq87Y&t=437" style="color: #6272a4;">Jan 29, 2026 - Datastar SDK Conf</a>
 </p>
 
 <div style="margin-top: 1em; text-align: center;">
